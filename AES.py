@@ -7,15 +7,6 @@ import numpy as np
 
 
 class AES():
-    MIX_MATRIX = np.array([
-        [2, 3, 1, 1],
-        [1, 2, 3, 1],
-        [1, 1, 2, 3],
-        [3, 1, 1, 2]
-    ], dtype = 'int')
-    
-    POLYNOMIAL = 0b100011011
-    
     def __init__(self, key):
         self.key = key  
         
@@ -44,8 +35,30 @@ class AES():
         pass
     
     def mix_column(self):
-        self.block = AES.MIX_MATRIX @ self.block
+        # Polynomial reduction / capping the result
+        poly = 0b100011011
+        cap = lambda num: num ^ poly if num >> 8 else num
         
+        # Multiplication functions
+        x1 = lambda num: num
+        x2 = lambda num: cap(num << 1)
+        x3 = lambda num: x2(num) ^ num
+        mix = np.array([
+            [x2, x3, x1, x1],
+            [x1, x2, x3, x1],
+            [x1, x1, x2, x3],
+            [x3, x1, x1, x2]
+        ])
+        
+        # Matrix multiplication
+        result = np.zeros((4, 4), dtype='int')
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
+                    result[i,j] ^= mix[i,k](self.block[k,j])
+        
+        # Save result
+        self.block = result
 
     def transform_key(self):
         pass
