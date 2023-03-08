@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-@author: david
+@authors: david & guille
 """
 
 import numpy as np
 
+def ROTL8(x, shift):
+    return ((x) << (shift)) | ((x) >> (8 - (shift)))
 
 class AES():
     def __init__(self, key):
-        self.key = key  
+        self.key = key
+        self.make_sbox()
         
     def transform_block(self, block, rounds):
         self.key_i = self.key.copy()
@@ -29,6 +32,10 @@ class AES():
         self.block = self.block ^ self.key_i
         
     def byte_sub(self):
+        # The goal of this function is to perform the byte substitution 
+        # (hence the name) of each element in the message block, using the
+        # corresponding elements of the substitution bytes matrix.
+        
         pass
     
     def shift_row(self):
@@ -62,3 +69,34 @@ class AES():
 
     def transform_key(self):
         pass
+    
+    def make_sbox(self):
+        # Code adapted from Wikipedia:
+            # https://en.wikipedia.org/wiki/Rijndael_S-box
+        p = 1
+        q = 1
+        firstTime = True
+        sbox = np.zeros((256), dtype=np.ubyte)
+        
+        while p != 1 or firstTime:
+            # multiply p by 3
+            p = p ^ (p << 1) ^ (0x1B if (p & 0x80) else 0)
+            
+            # divide q by 3 (equals multiplication by 0xf6)
+            q ^= q << 1
+            q ^= q << 2
+            q ^= q << 4
+            q ^= 0x09 if q & 0x80 else 0
+
+            
+            # compute the affine transformation
+            xformed = q ^ ROTL8(q, 1) ^ ROTL8(q, 2) ^ ROTL8(q, 3) ^ ROTL8(q, 4);
+            
+            sbox[p] = xformed ^ 0x63
+            firstTime = False
+        
+        # 0 is a special case since it has no inverse
+        sbox[0] = 0x63;
+        
+        self.sbox=sbox
+        

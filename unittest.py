@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: david
+@authors: david & guille
 """
 
 import numpy as np
