@@ -34,9 +34,11 @@ class AES():
     def byte_sub(self):
         # The goal of this function is to perform the byte substitution 
         # (hence the name) of each element in the message block, using the
-        # corresponding elements of the substitution bytes matrix.
+        # corresponding elements of the substitution bytes matrix (sbox).
+        
         
         pass
+        
     
     def shift_row(self):
         pass
@@ -80,7 +82,7 @@ class AES():
         
         while p != 1 or firstTime:
             # multiply p by 3
-            p = p ^ (p << 1) ^ (0x1B if (p & 0x80) else 0)
+            p = (p ^ (p << 1) ^ (0x1B if (p & 0x80) else 0)) % 256
             
             # divide q by 3 (equals multiplication by 0xf6)
             q ^= q << 1
@@ -96,7 +98,7 @@ class AES():
             firstTime = False
         
         # 0 is a special case since it has no inverse
-        sbox[0] = 0x63;
+        sbox[0] = 0x63
         
         self.sbox=sbox
         
