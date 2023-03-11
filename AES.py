@@ -6,13 +6,26 @@
 import numpy as np
 
 def ROTL8(x, shift):
-    return ((x) << (shift)) | ((x) >> (8 - (shift)))
+    return ((x << shift) | (x >> (8 - shift))) & 0xFF
 
 class AES():
     def __init__(self, key):
         self.key = key
         self.make_sbox()
-        
+       
+    def encode(self, message, rounds=10, padding=' '):
+        if isinstance(message, str):
+            message = list(map(ord, message))
+        message += 15 * [ord(padding)]
+        blocks = len(message) // 16
+        cipher = []
+        for i in range(blocks):
+            block = message[i * 16:(i + 1) * 16]
+            block = np.array(block, dtype='uint8').reshape((4, 4))
+            block = self.transform_block(block, rounds)
+            cipher += list(block.flatten())
+        return np.array(cipher)
+    
     def transform_block(self, block, rounds):
         self.key_i = self.key.copy()
         self.block = block
@@ -60,7 +73,7 @@ class AES():
         ])
         
         # Matrix multiplication
-        result = np.zeros((4, 4), dtype='int')
+        result = np.zeros((4, 4), dtype='uint8')
         for i in range(4):
             for j in range(4):
                 for k in range(4):
@@ -78,18 +91,18 @@ class AES():
         p = 1
         q = 1
         firstTime = True
-        sbox = np.zeros((256), dtype=np.ubyte)
+        sbox = np.zeros((256), dtype='uint8')
         
         while p != 1 or firstTime:
             # multiply p by 3
-            p = (p ^ (p << 1) ^ (0x1B if (p & 0x80) else 0)) % 256
+            p = (p ^ (p << 1) ^ (0x1B if (p & 0x80) else 0)) & 0xFF
             
             # divide q by 3 (equals multiplication by 0xf6)
             q ^= q << 1
             q ^= q << 2
             q ^= q << 4
             q ^= 0x09 if q & 0x80 else 0
-
+            q &= 0xFF
             
             # compute the affine transformation
             xformed = q ^ ROTL8(q, 1) ^ ROTL8(q, 2) ^ ROTL8(q, 3) ^ ROTL8(q, 4);
