@@ -35,7 +35,7 @@ if __name__ == "__main__":
         [0x19, 0xa0, 0x9a, 0xe9],
         [0x3d, 0xf4, 0xc6, 0xf8],
         [0xe3, 0xe2, 0x8d, 0x48],
-        [0xbe, 0x2c, 0x2a, 0x08],
+        [0xbe, 0x2b, 0x2a, 0x08],
     ], dtype='uint8')
     
     substituted = np.array([
@@ -76,6 +76,7 @@ if __name__ == "__main__":
     aes = AES(None)
 
     aes.key_i = initial.copy()
+    aes.Rcon = np.array([1, 0, 0, 0])
     aes.transform_key()
     if not np.all(aes.key_i == transformed):
         print("Error while transforming key")

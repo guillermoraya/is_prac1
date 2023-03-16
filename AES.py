@@ -28,6 +28,7 @@ class AES():
     
     def transform_block(self, block, rounds):
         self.key_i = self.key.copy()
+        self.Rcon = np.array([1,0,0,0])
         self.block = block
         self.add_round_key()
         for _ in range(rounds - 1):
@@ -41,20 +42,25 @@ class AES():
         return self.block
     
     def add_round_key(self):
-        self.transform_key()
         self.block = self.block ^ self.key_i
+        self.transform_key()
         
     def byte_sub(self):
         # The goal of this function is to perform the byte substitution 
         # (hence the name) of each element in the message block, using the
         # corresponding elements of the substitution bytes matrix (sbox).
-        
-        
-        pass
-        
+        for row in range(4):
+            for col in range(4):
+                self.block[row,col] = self.sbox[self.block[row,col]]
     
     def shift_row(self):
-        pass
+        # Get the block, and shift its rows to the left:
+            # The first row doesn't change at all
+            # The second row gets its columns shifted one position
+            # The third one gets them shifted two positions to the left
+            # And the fourth gets them shifted three positions to the left
+        for row in range(4):
+            self.block[row] = np.roll(self.block[row], -row)
     
     def mix_column(self):
         # Polynomial reduction / capping the result
@@ -83,9 +89,40 @@ class AES():
         self.block = result
 
     def transform_key(self):
-        pass
-    
+        # Select the last column of the current key,
+        rotWord = self.key_i[:,-1].copy()
+        for i in range(4):
+            # Substitute its contents using the sbox
+            rotWord[i] = self.sbox[rotWord[i]]
+        # Shift the substituted last column
+        rotWord = np.roll(rotWord,-1)
+        
+        # We will now perform the XOR on:
+            #The transformed last column
+            #The first column of the key
+            #Rcon
+        newKey = np.zeros([4,4], dtype='uint8')
+        newKey[:,0] = self.key_i[:,0] ^ rotWord ^ self.Rcon
+        newKey[:,1] = self.key_i[:,1] ^ newKey[:,0]
+        newKey[:,2] = self.key_i[:,2] ^ newKey[:,1]
+        newKey[:,3] = self.key_i[:,3] ^ newKey[:,2]
+        
+        self.key_i = newKey
+        
+        # Update the Rcon vector.
+        # For that, we will need some utility functions:
+            # Polynomial reduction / capping the result
+        poly = 0b100011011
+        cap = lambda num: num ^ poly if num >> 8 else num
+            # Multiplication by 2
+        x2 = lambda num: cap(num << 1)
+        self.Rcon[0] = x2(self.Rcon[0])
+
+            
     def make_sbox(self):
+        # This function creates the subsitution matrix for the AES ciphering
+        # algorithm.
+        
         # Code adapted from Wikipedia:
             # https://en.wikipedia.org/wiki/Rijndael_S-box
         p = 1
