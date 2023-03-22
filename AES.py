@@ -42,6 +42,9 @@ class AES():
         return self.block
     
     def add_round_key(self):
+        # This function performs a bitwise XOR operation between the block and 
+        # the key at its current state, and transform the key for the next 
+        # iteration.
         self.block = self.block ^ self.key_i
         self.transform_key()
         
@@ -65,9 +68,10 @@ class AES():
     def mix_column(self):
         # Polynomial reduction / capping the result
         poly = 0b100011011
+        # Performs the modulo opertaion of num over poly.
         cap = lambda num: num ^ poly if num >> 8 else num
         
-        # Multiplication functions
+        # Let's define matrix multiplication for our space:
         x1 = lambda num: num
         x2 = lambda num: cap(num << 1)
         x3 = lambda num: x2(num) ^ num
@@ -89,6 +93,11 @@ class AES():
         self.block = result
 
     def transform_key(self):
+    # This function's purpose is to transform the key after using it, in order 
+    # to prepare it for the next iteration.
+    # It also updates the Rcon vector, as a preliminary step for the next iter-
+    # ation's call to transform_key().
+        
         # Select the last column of the current key,
         rotWord = self.key_i[:,-1].copy()
         for i in range(4):
@@ -107,6 +116,9 @@ class AES():
         newKey[:,2] = self.key_i[:,2] ^ newKey[:,1]
         newKey[:,3] = self.key_i[:,3] ^ newKey[:,2]
         
+        # After performing all the necessary XOR operations, we store their re-
+        # sults on the key_i vector -thus updating the current state of the 
+        # round key.
         self.key_i = newKey
         
         # Update the Rcon vector.
