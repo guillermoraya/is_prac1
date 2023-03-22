@@ -66,15 +66,21 @@ class AES():
             self.block[row] = np.roll(self.block[row], -row)
     
     def mix_column(self):
-        # Polynomial reduction / capping the result
-        poly = 0b100011011
-        # Performs the modulo opertaion of num over poly.
-        cap = lambda num: num ^ poly if num >> 8 else num
+        # This function aims to multiply the block matrix with another matrix
+        # (which we will call "mix"), which contains polynomials.
         
-        # Let's define matrix multiplication for our space:
+        # In order to perform that, we first have to define how to multiply
+        # by these polynomials, as well as some other auxiliary functions:        
+            # Polynomial reduction / capping the result
+        poly = 0b100011011
+            # This performs the modulo operation of num over poly.
+        cap = lambda num: num ^ poly if num >> 8 else num
+            # Defining the polynomials
         x1 = lambda num: num
         x2 = lambda num: cap(num << 1)
         x3 = lambda num: x2(num) ^ num
+       
+        # We are now ready to define the "mix" matrix:
         mix = np.array([
             [x2, x3, x1, x1],
             [x1, x2, x3, x1],
@@ -82,7 +88,7 @@ class AES():
             [x3, x1, x1, x2]
         ])
         
-        # Matrix multiplication
+        # And finally, on to our matrix multiplication:
         result = np.zeros((4, 4), dtype='uint8')
         for i in range(4):
             for j in range(4):
